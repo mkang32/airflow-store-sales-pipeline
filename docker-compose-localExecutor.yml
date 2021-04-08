@@ -3,7 +3,7 @@ services:
     postgres:
         image: postgres:9.6
         environment:
-            - POSTRGRES_USER=airflow
+            - POSTGRES_USER=airflow
             - POSTGRES_PASSWORD=airflow
             - POSTGRES_DB=airflow
     mysql: 
@@ -22,11 +22,11 @@ services:
         restart: always
         depends_on:
             - postgres
-            - misql
+            - mysql
         environment:
             - INSTALL_MYSQL=y
             - LOAD_EX=n
-            - EXECUTOR=LOCAL
+            - EXECUTOR=Local
             - AIRFLOW__SMTP__SMTP_HOST=smtp.gmail.com
             - AIRFLOW__SMTP__SMTP_USER=minkyung.kang32@gmail.com
             - AIRFLOW__SMTP__SMTP_PASSWORD=hdwiondmyyobhlto
