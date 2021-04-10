@@ -83,8 +83,8 @@ t8 = EmailOperator(
     to="minkyung.kang32@gmail.com",
     subject="Daily report generated",
     html_content="""<h1>Congratulations! Your store reports are ready.</h1>""",
-    files=[f"~/store_files_airflow/location_wise_profit_{yesterday_date}.csv",
-           f"~/store_files_airflow/store_wise_profit_{yesterday_date}.csv"],
+    files=[f"/usr/local/airflow/store_files_airflow/location_wise_profit_{yesterday_date}.csv",
+           f"/usr/local/airflow/store_files_airflow/store_wise_profit_{yesterday_date}.csv"],
     dag=dag
 )
 
