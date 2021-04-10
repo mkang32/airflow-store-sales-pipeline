@@ -28,8 +28,8 @@ services:
             - LOAD_EX=n
             - EXECUTOR=Local
             - AIRFLOW__SMTP__SMTP_HOST=smtp.gmail.com
-            - AIRFLOW__SMTP__SMTP_USER=minkyung.kang32@gmail.com
-            - AIRFLOW__SMTP__SMTP_PASSWORD=hdwiondmyyobhlto
+            - AIRFLOW__SMTP__SMTP_USER= # USE EMAIL
+            - AIRFLOW__SMTP__SMTP_PASSWORD= # USE PASSWORD
             - AIRFLOW__SMTP__SMTP_PORT=587
             - AIRFLOW__SMTP__SMTP_MAIL_FROM=Airflow
         volumes:
