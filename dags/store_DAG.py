@@ -15,86 +15,69 @@ default_args = {
     "retry_delay": timedelta(seconds=5)
 }
 
-dag = DAG("store_dag", 
-    default_args=default_args, 
-    schedule_interval='@daily',
-    template_searchpath=['/usr/local/airflow/sql_files'],
-    catchup=False)
+with DAG("store_dag", default_args=default_args, schedule_interval='@daily', template_searchpath=[
+    '/usr/local/airflow/sql_files'], catchup=False) as dag:
 
-# task1: check if the source file exists in the input directory 
-# note that the file in airflow container. 
-t1 = BashOperator(
-    task_id="check_file_exists",
-    bash_command="shasum ~/store_files_airflow/raw_store_transactions.csv", 
-    retries=1,
-    retry_delay=timedelta(seconds=15),
-    dag=dag)
+    # task1: check if the source file exists in the input directory
+    # note that the file in airflow container.
+    t1 = BashOperator(
+        task_id="check_file_exists",
+        bash_command="shasum ~/store_files_airflow/raw_store_transactions.csv",
+        retries=1,
+        retry_delay=timedelta(seconds=15))
 
-# task 2: clean data (remove special characters)
-t2 = PythonOperator(
-    task_id="clean_raw_csv",
-    python_callable=data_cleaner,
-    dag=dag)
+    # task 2: clean data (remove special characters)
+    t2 = PythonOperator(
+        task_id="clean_raw_csv",
+        python_callable=data_cleaner)
 
-# task 3: create table 
-t3 = MySqlOperator(
-    task_id="create_mysql_table",
-    mysql_conn_id="mysql_conn",
-    sql="create_table.sql",
-    dag=dag)
+    # task 3: create table
+    t3 = MySqlOperator(
+        task_id="create_mysql_table",
+        mysql_conn_id="mysql_conn",
+        sql="create_table.sql")
 
-# task 4: insert cleaned data into table
-t4 = MySqlOperator(
-    task_id="insert_into_table",
-    mysql_conn_id="mysql_conn",
-    sql="insert_into_table.sql",
-    dag=dag)
+    # task 4: insert cleaned data into table
+    t4 = MySqlOperator(
+        task_id="insert_into_table",
+        mysql_conn_id="mysql_conn",
+        sql="insert_into_table.sql",
+        dag=dag)
 
-# task 5: calculate store-wise and location-wise profit (yesterday) and save results as csv
-t5 = MySqlOperator(
-    task_id="select_from_table",
-    mysql_conn_id="mysql_conn",
-    sql="select_from_table.sql",
-    dag=dag
-)
+    # task 5: calculate store-wise and location-wise profit (yesterday) and save results as csv
+    t5 = MySqlOperator(
+        task_id="select_from_table",
+        mysql_conn_id="mysql_conn",
+        sql="select_from_table.sql")
 
-yesterday_date = datetime.strftime(datetime.now() - timedelta(1), "%Y-%m-%d")
-# task 6: rename the location profit output file by adding date
-t6 = BashOperator(
-    task_id="move_loc_file",
-    bash_command="cat ~/store_files_airflow/location_wise_profit.csv && mv "
-                 "~/store_files_airflow/location_wise_profit.csv "
-                 f"~/store_files_airflow/location_wise_profit_{yesterday_date}.csv",
-    dag=dag
-)
+    yesterday_date = datetime.strftime(datetime.now() - timedelta(1), "%Y-%m-%d")
+    # task 6: rename the location profit output file by adding date
+    t6 = BashOperator(
+        task_id="move_loc_file",
+        bash_command="cat ~/store_files_airflow/location_wise_profit.csv && mv "
+                     "~/store_files_airflow/location_wise_profit.csv "
+                     f"~/store_files_airflow/location_wise_profit_{yesterday_date}.csv")
 
-# task 7: rename the store profit output file by adding date
-t7 = BashOperator(
-    task_id="move_store_file",
-    bash_command="cat ~/store_files_airflow/store_wise_profit.csv && mv "
-                 "~/store_files_airflow/store_wise_profit.csv "
-                 f"~/store_files_airflow/store_wise_profit_{yesterday_date}.csv",
-    dag=dag
-)
+    # task 7: rename the store profit output file by adding date
+    t7 = BashOperator(
+        task_id="move_store_file",
+        bash_command="cat ~/store_files_airflow/store_wise_profit.csv && mv "
+                     "~/store_files_airflow/store_wise_profit.csv "
+                     f"~/store_files_airflow/store_wise_profit_{yesterday_date}.csv")
 
-# task 8: send email
-t8 = EmailOperator(
-    task_id="send_email",
-    to="minkyung.kang32@gmail.com",
-    subject="Daily report generated",
-    html_content="""<h1>Congratulations! Your store reports are ready.</h1>""",
-    files=[f"/usr/local/airflow/store_files_airflow/location_wise_profit_{yesterday_date}.csv",
-           f"/usr/local/airflow/store_files_airflow/store_wise_profit_{yesterday_date}.csv"],
-    dag=dag
-)
+    # task 8: send email
+    t8 = EmailOperator(
+        task_id="send_email",
+        to="minkyung.kang32@gmail.com",
+        subject="Daily report generated",
+        html_content="""<h1>Congratulations! Your store reports are ready.</h1>""",
+        files=[f"/usr/local/airflow/store_files_airflow/location_wise_profit_{yesterday_date}.csv",
+               f"/usr/local/airflow/store_files_airflow/store_wise_profit_{yesterday_date}.csv"])
 
-# task 9: rename the raw files as well because it will be updated tomorrow again
-t9 = BashOperator(
-    task_id="rename_raw",
-    bash_command="mv ~/store_files_airflow/raw_store_transactions.csv "
-                 f"~/store_files_airflow/raw_store_transactions_{yesterday_date}.csv",
-    dag=dag
-)
+    # task 9: rename the raw files as well because it will be updated tomorrow again
+    t9 = BashOperator(
+        task_id="rename_raw",
+        bash_command="mv ~/store_files_airflow/raw_store_transactions.csv "
+                     f"~/store_files_airflow/raw_store_transactions_{yesterday_date}.csv")
 
-t1 >> t2 >> t3 >> t4 >> t5 >> [t6, t7] >> t8 >> t9
-
+    t1 >> t2 >> t3 >> t4 >> t5 >> [t6, t7] >> t8 >> t9
