@@ -36,7 +36,7 @@ Airflow pipeline for data reading, cleansing, aggregating, saving, and emailing 
 4. Create a new image by run docker-compose file in terminal and installing necessary containers
 
    ```bash
-   ➜ docker-compose -f .\docker-compose-localExecutor.yml up -d
+   ➜ docker-compose -f ./docker-compose-localExecutor.yml up -d
    ```
 
 5. Make sure proper containers are running 
